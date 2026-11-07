@@ -7,6 +7,7 @@ An evidence-first Python research assistant that searches the web, filters resul
 ## Features
 
 - Async Brave Search API integration
+- Free Wikipedia search integration (no API key required)
 - Input validation and retries for transient errors
 - Duplicate URL filtering
 - Transparent lexical relevance scoring
@@ -26,6 +27,13 @@ python -m pip install -e ".[dev]"
 cp .env.example .env
 # Set BRAVE_API_KEY in .env
 research-agent "AI chip performance benchmarks" --output report.md
+```
+
+To run without an API key, use Wikipedia in English or Persian:
+
+```bash
+research-agent "Artificial intelligence" --provider wikipedia --language en --output report.md
+research-agent "هوش مصنوعی" --provider wikipedia --language fa --output report-fa.md
 ```
 
 ## Quality checks
