@@ -1,6 +1,6 @@
 from research_agent.evaluator import evaluate
 from research_agent.models import ResearchReport
-from research_agent.search import BraveSearchClient
+from research_agent.search import SearchProvider
 
 
 def render_markdown(query: str, evidence: list) -> str:
@@ -31,7 +31,7 @@ def render_markdown(query: str, evidence: list) -> str:
 
 
 class ResearchAgent:
-    def __init__(self, search_client: BraveSearchClient):
+    def __init__(self, search_client: SearchProvider):
         self.search_client = search_client
 
     async def research(self, query: str, count: int = 10) -> ResearchReport:

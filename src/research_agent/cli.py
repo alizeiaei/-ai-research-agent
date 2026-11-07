@@ -23,7 +23,10 @@ def main() -> None:
         report = asyncio.run(ResearchAgent(BraveSearchClient(key)).research(args.query, args.count))
     except (SearchError, ValueError) as exc:
         parser.exit(1, f"Error: {exc}\n")
-    args.output.write_text(report.markdown, encoding="utf-8")
+    try:
+        args.output.write_text(report.markdown, encoding="utf-8")
+    except OSError as exc:
+        parser.exit(1, f"Error: could not write report to {args.output}: {exc}\n")
     print(f"Saved {len(report.evidence)} sources to {args.output}")
 
 

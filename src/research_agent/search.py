@@ -1,5 +1,9 @@
 import asyncio
-from urllib.parse import urlsplit
+from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
+from typing import Protocol
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import httpx
 
@@ -10,14 +14,63 @@ class SearchError(RuntimeError):
     """Search provider failure."""
 
 
+class SearchProvider(Protocol):
+    async def search(self, query: str, count: int = 10) -> list[SearchResult]: ...
+
+
+TRACKING_QUERY_PARAMETERS = {"fbclid", "gclid", "mc_cid", "mc_eid"}
+
+
+def canonicalize_url(url: str) -> str:
+    """Normalize common equivalent URL forms for duplicate detection."""
+    parts = urlsplit(url)
+    hostname = (parts.hostname or "").lower()
+    port = parts.port
+    if port and not ((parts.scheme.lower() == "http" and port == 80) or (parts.scheme.lower() == "https" and port == 443)):
+        hostname = f"{hostname}:{port}"
+
+    query = urlencode(
+        sorted(
+            (key, value)
+            for key, value in parse_qsl(parts.query, keep_blank_values=True)
+            if not key.lower().startswith("utm_") and key.lower() not in TRACKING_QUERY_PARAMETERS
+        ),
+        doseq=True,
+    )
+    path = parts.path.rstrip("/") or "/"
+    return urlunsplit((parts.scheme.lower(), hostname, path, query, ""))
+
+
+def retry_delay(response: httpx.Response | None, fallback: float) -> float:
+    """Return a bounded Retry-After delay, falling back when the header is unusable."""
+    if response is None or not (value := response.headers.get("Retry-After")):
+        return fallback
+    try:
+        return min(max(float(value), 0.0), 60.0)
+    except ValueError:
+        try:
+            retry_at = parsedate_to_datetime(value)
+            if retry_at.tzinfo is None:
+                retry_at = retry_at.replace(tzinfo=UTC)
+            return min(max((retry_at - datetime.now(UTC)).total_seconds(), 0.0), 60.0)
+        except (TypeError, ValueError, OverflowError):
+            return fallback
+
+
 class BraveSearchClient:
     BASE_URL = "https://api.search.brave.com/res/v1/web/search"
 
-    def __init__(self, api_key: str, client: httpx.AsyncClient | None = None):
+    def __init__(
+        self,
+        api_key: str,
+        client: httpx.AsyncClient | None = None,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    ):
         if not api_key.strip():
             raise ValueError("BRAVE_API_KEY is required")
         self.api_key = api_key
         self.client = client
+        self.sleep = sleep
 
     async def search(self, query: str, count: int = 10) -> list[SearchResult]:
         if not query.strip():
@@ -44,7 +97,8 @@ class BraveSearchClient:
                     )
                     if not retryable or attempt == 2:
                         raise SearchError(f"Search failed: {exc}") from exc
-                    await asyncio.sleep(0.25 * (2**attempt))
+                    response = exc.response if isinstance(exc, httpx.HTTPStatusError) else None
+                    await self.sleep(retry_delay(response, 0.25 * (2**attempt)))
                 except ValueError as exc:
                     raise SearchError("Invalid JSON from search provider") from exc
             raise SearchError("Search exhausted retries")
@@ -57,7 +111,13 @@ class BraveSearchClient:
 
         found: list[SearchResult] = []
         seen: set[str] = set()
-        for item in payload.get("web", {}).get("results", []):
+        web = payload.get("web")
+        if web is None:
+            return []
+        if not isinstance(web, dict) or not isinstance(web.get("results", []), list):
+            raise SearchError("Invalid search response structure")
+
+        for item in web.get("results", []):
             if not isinstance(item, dict):
                 continue
             try:
@@ -70,7 +130,7 @@ class BraveSearchClient:
                 )
             except (KeyError, TypeError, ValueError):
                 continue
-            canonical = str(result.url).rstrip("/").lower()
+            canonical = canonicalize_url(str(result.url))
             if canonical not in seen:
                 seen.add(canonical)
                 found.append(result)
