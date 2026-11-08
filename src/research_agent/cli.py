@@ -1,13 +1,12 @@
 import argparse
 import asyncio
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 from research_agent.agent import ResearchAgent
-from research_agent.search import BraveSearchClient, SearchError
-from research_agent.wikipedia import DEFAULT_USER_AGENT, WikipediaSearchProvider
+from research_agent.providers import create_search_provider
+from research_agent.search import SearchError
 
 
 def main() -> None:
@@ -20,18 +19,8 @@ def main() -> None:
     args = parser.parse_args()
     load_dotenv()
 
-    if args.provider == "wikipedia":
-        search_provider = WikipediaSearchProvider(
-            language=args.language,
-            user_agent=os.getenv("WIKIPEDIA_USER_AGENT", DEFAULT_USER_AGENT),
-        )
-    else:
-        key = os.getenv("BRAVE_API_KEY", "")
-        if not key:
-            parser.error("Set BRAVE_API_KEY in your environment or .env file")
-        search_provider = BraveSearchClient(key)
-
     try:
+        search_provider = create_search_provider(args.provider, args.language)
         report = asyncio.run(ResearchAgent(search_provider).research(args.query, args.count))
     except (SearchError, ValueError) as exc:
         parser.exit(1, f"Error: {exc}\n")

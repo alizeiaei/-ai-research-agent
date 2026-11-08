@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="پنل تحقیق مبتنی بر شواهد" />
+    <title>AI Research Agent</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="brand-row">
+          <span class="brand-mark" aria-hidden="true">AR</span>
+          <span class="eyebrow">EVIDENCE-FIRST RESEARCH</span>
+        </div>
+        <h1>از یک سؤال،<br /><span>به منابع قابل بررسی.</span></h1>
+        <p>موضوع را وارد کنید؛ عامل پژوهشی منابع مرتبط را پیدا، ارزیابی و مرتب می‌کند.</p>
+      </header>
+
+      <section class="workspace" aria-label="فرم تحقیق">
+        <form id="research-form">
+          <label for="query">موضوع یا سؤال تحقیق</label>
+          <textarea id="query" name="query" rows="3" minlength="2" maxlength="300"
+            placeholder="مثلاً: کاربرد هوش مصنوعی در تشخیص پزشکی" required></textarea>
+
+          <div class="controls">
+            <div>
+              <label for="provider">منبع</label>
+              <select id="provider" name="provider">
+                <option value="wikipedia">Wikipedia — رایگان</option>
+                <option value="brave">Brave Search</option>
+              </select>
+            </div>
+            <div>
+              <label for="language">زبان</label>
+              <select id="language" name="language">
+                <option value="fa">فارسی</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div>
+              <label for="count">تعداد منابع</label>
+              <input id="count" name="count" type="number" min="1" max="20" value="10" />
+            </div>
+          </div>
+
+          <button id="submit-button" type="submit">
+            <span>شروع تحقیق</span><span aria-hidden="true">←</span>
+          </button>
+        </form>
+
+        <aside class="status-panel">
+          <div><span class="status-dot"></span> سرویس آماده است</div>
+          <p>Wikipedia بدون API Key کار می‌کند. برای Brave باید کلید را در فایل محیطی قرار دهید.</p>
+        </aside>
+      </section>
+
+      <section id="message" class="message" hidden aria-live="polite"></section>
+
+      <section id="results" class="results" hidden>
+        <div class="results-heading">
+          <div>
+            <span class="eyebrow">RESEARCH OUTPUT</span>
+            <h2 id="result-title"></h2>
+          </div>
+          <button id="download-button" class="secondary" type="button">دانلود گزارش MD</button>
+        </div>
+        <div id="result-meta" class="result-meta"></div>
+        <div class="answer-panel">
+          <span class="eyebrow">DIRECT ANSWER</span>
+          <p id="direct-answer"></p>
+        </div>
+        <div id="insight-sections" class="insight-sections"></div>
+        <div class="section-label">
+          <span class="eyebrow">SUPPORTING EVIDENCE</span>
+          <h3>منابع پشتیبان</h3>
+        </div>
+        <div id="evidence-list" class="evidence-grid"></div>
+        <div class="limitations">
+          <strong>محدودیت فعلی</strong>
+          <p>این گزارش extractive است؛ جمله‌ها از منابع بازیابی شده‌اند و هنوز اعتبار یا صحت واقعی منابع را اندازه نمی‌گیرد.</p>
+        </div>
+      </section>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

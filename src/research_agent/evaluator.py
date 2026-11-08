@@ -6,7 +6,7 @@ STOPWORDS = {"the", "and", "for", "with", "from", "what", "how", "are", "does"}
 
 
 def score_result(query: str, result: SearchResult) -> float:
-    terms = {w for w in re.findall(r"\w+", query.lower()) if len(w) > 2} - STOPWORDS
+    terms = {w for w in re.findall(r"\w+", query.lower()) if len(w) >= 2} - STOPWORDS
     if not terms:
         return 0.0
     title = result.title.lower()

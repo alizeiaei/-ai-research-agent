@@ -12,9 +12,11 @@ dependencies = ["httpx>=0.28", "beautifulsoup4>=4.12", "pydantic>=2", "python-do
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=1", "ruff>=0.9"]
+web = ["fastapi>=0.115", "uvicorn>=0.34"]
 
 [project.scripts]
 research-agent = "research_agent.cli:main"
+research-agent-web = "research_agent.web:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

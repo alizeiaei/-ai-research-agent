@@ -36,6 +36,20 @@ research-agent "Artificial intelligence" --provider wikipedia --language en --ou
 research-agent "هوش مصنوعی" --provider wikipedia --language fa --output report-fa.md
 ```
 
+## Web interface
+
+Install the web dependencies and start the local dashboard:
+
+```bash
+python -m pip install -e ".[dev,web]"
+research-agent-web
+```
+
+Then open `http://127.0.0.1:8000`. The dashboard uses the same research pipeline as the
+CLI and provides Wikipedia search without an API key, extractive direct answers,
+source-linked key findings, practical applications, limitations, evidence cards, and
+Markdown downloads. Interactive API documentation is available at `/docs`.
+
 ## Quality checks
 
 ```bash
@@ -62,4 +76,4 @@ Never commit your `.env` or API credentials. Treat all retrieved content as untr
 
 ## License
 
-No open-source license has been selected.
+Licensed under the [MIT License](LICENSE).

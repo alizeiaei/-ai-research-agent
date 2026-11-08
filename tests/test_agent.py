@@ -11,7 +11,10 @@ class FakeSearch:
                 title="AI chip performance",
                 url="https://example.org/research",
                 source="Example",
-                snippet="AI chip performance benchmark",
+                snippet=(
+                    "AI chip performance benchmarks measure speed and energy efficiency. "
+                    "They are used to compare hardware for practical machine learning workloads."
+                ),
             ),
             SearchResult(
                 title="Unrelated recipe",
@@ -29,3 +32,7 @@ async def test_agent_includes_citations_and_filters_irrelevant_results():
     assert "https://example.org/research" in report.markdown
     assert "Unrelated recipe" not in report.markdown
     assert "not independently verified" in report.markdown
+    assert "AI chip performance benchmarks" in report.answer
+    assert report.key_findings
+    assert report.practical_applications
+    assert "## Direct Answer" in report.markdown

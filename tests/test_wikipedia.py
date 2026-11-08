@@ -14,8 +14,27 @@ def test_invalid_language():
 async def test_search_parses_results_and_removes_html():
     def handler(request):
         assert request.url.host == "fa.wikipedia.org"
-        assert request.url.params["srsearch"] == "هوش مصنوعی"
         assert request.headers["User-Agent"] == "test-agent"
+        if request.url.params.get("prop") == "extracts|pageprops":
+            return httpx.Response(
+                200,
+                json={
+                    "query": {
+                        "pages": {
+                            "1": {
+                                "title": "هوش مصنوعی",
+                                "extract": "هوش مصنوعی برای تشخیص بیماری استفاده می‌شود.",
+                            },
+                            "2": {
+                                "title": "هوش مصنوعی (ابهام‌زدایی)",
+                                "extract": "این عنوان به چند موضوع اشاره دارد.",
+                                "pageprops": {"disambiguation": ""},
+                            },
+                        }
+                    }
+                },
+            )
+        assert request.url.params["srsearch"] == "هوش مصنوعی"
         return httpx.Response(
             200,
             json={
@@ -24,6 +43,10 @@ async def test_search_parses_results_and_removes_html():
                         {
                             "title": "هوش مصنوعی",
                             "snippet": '<span class="searchmatch">هوش</span> مصنوعی',
+                        },
+                        {
+                            "title": "هوش مصنوعی (ابهام‌زدایی)",
+                            "snippet": "چند موضوع",
                         },
                         {"broken": "result"},
                     ]
@@ -36,7 +59,7 @@ async def test_search_parses_results_and_removes_html():
 
     assert len(results) == 1
     assert results[0].title == "هوش مصنوعی"
-    assert results[0].snippet == "هوش مصنوعی"
+    assert results[0].snippet == "هوش مصنوعی برای تشخیص بیماری استفاده می‌شود."
     assert str(results[0].url).startswith("https://fa.wikipedia.org/wiki/")
 
 
@@ -65,5 +88,5 @@ async def test_http_error_becomes_search_error():
     async with httpx.AsyncClient(
         transport=httpx.MockTransport(lambda request: httpx.Response(503))
     ) as http:
-        with pytest.raises(SearchError, match="Wikipedia search failed"):
+        with pytest.raises(SearchError, match="Wikipedia request failed"):
             await WikipediaSearchProvider(client=http).search("AI")
